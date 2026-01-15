@@ -47,12 +47,12 @@ export default function TippelesPage() {
       if (res.ok) {
         const data = await res.json();
         // Átalakítjuk a tippeket egy map-ba az eventId alapján
-        const betsMap: Record<number, BetInput> = {};
-        data.forEach((bet: any) => {
-          betsMap[bet.eventId] = {
-            predictedHomeGoals: bet.predictedHomeGoals,
-            predictedAwayGoals: bet.predictedAwayGoals,
-          };
+          const betsMap: Record<number, BetInput> = {};
+          data.forEach((bet: BetInput) => {
+            betsMap[bet.eventId] = {
+              predictedHomeGoals: bet.predictedHomeGoals,
+              predictedAwayGoals: bet.predictedAwayGoals,
+            };
         });
         setUserBets(betsMap);
       }
@@ -95,7 +95,7 @@ export default function TippelesPage() {
 
     const payload = Object.entries(bets)
       .map(([eventId, bet]) => ({ eventId: Number(eventId), ...bet }))
-      .filter((x) => openIds.has(x.eventId));
+      .filter((x: { eventId: number }) => openIds.has(x.eventId));
 
     if (payload.length === 0) {
       setMessage("⚠️ Nincs megadott tipp a nyitott eseményekre.");
