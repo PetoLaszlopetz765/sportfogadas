@@ -1,0 +1,285 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+interface Event {
+  id: number;
+  homeTeam: string;
+  awayTeam: string;
+  kickoffTime: string;
+  status: "OPEN" | "CLOSED" | "NYITOTT" | "LEZÁRT";
+  creditCost: number;
+}
+
+interface BetInput {
+  predictedHomeGoals: number;
+  predictedAwayGoals: number;
+}
+
+function isEventOpen(status: Event["status"]) {
+  return status === "OPEN" || status === "NYITOTT";
+}
+
+export default function TippelesPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [bets, setBets] = useState<Record<number, BetInput>>({});
+  const [userBets, setUserBets] = useState<Record<number, BetInput>>({});
+  const [message, setMessage] = useState<string>("");
+
+  useEffect(() => {
+    async function loadEvents() {
+      const res = await fetch("/api/events", { cache: "no-store" });
+      if (res.ok) {
+        const data: Event[] = await res.json();
+        setEvents(data);
+      }
+    }
+    
+    async function loadUserBets() {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const res = await fetch("/api/bets/my-bets", {
+        headers: { "Authorization": `Bearer ${token}` },
+        cache: "no-store"
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        // Átalakítjuk a tippeket egy map-ba az eventId alapján
+        const betsMap: Record<number, BetInput> = {};
+        data.forEach((bet: any) => {
+          betsMap[bet.eventId] = {
+            predictedHomeGoals: bet.predictedHomeGoals,
+            predictedAwayGoals: bet.predictedAwayGoals,
+          };
+        });
+        setUserBets(betsMap);
+      }
+    }
+    
+    loadEvents();
+    loadUserBets();
+  }, []);
+
+  function handleChange(eventId: number, field: keyof BetInput, value: string) {
+    const n = value === "" ? 0 : Number(value);
+    setBets((prev) => ({
+      ...prev,
+      [eventId]: {
+        predictedHomeGoals: prev[eventId]?.predictedHomeGoals ?? 0,
+        predictedAwayGoals: prev[eventId]?.predictedAwayGoals ?? 0,
+        [field]: Number.isFinite(n) ? n : 0,
+      },
+    }));
+  }
+
+  const hasOpenEvent = useMemo(
+    () => events.some((e) => isEventOpen(e.status)),
+    [events]
+  );
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setMessage("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("❌ Nincs bejelentkezve. Kérlek, jelentkezz be!");
+      window.location.href = "/login";
+      return;
+    }
+
+    // csak nyitott meccsek tippjeit küldjük
+    const openIds = new Set(events.filter((e) => isEventOpen(e.status)).map((e) => e.id));
+
+    const payload = Object.entries(bets)
+      .map(([eventId, bet]) => ({ eventId: Number(eventId), ...bet }))
+      .filter((x) => openIds.has(x.eventId));
+
+    if (payload.length === 0) {
+      setMessage("⚠️ Nincs megadott tipp a nyitott eseményekre.");
+      return;
+    }
+
+    const res = await fetch("/api/bets", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      setMessage(data.message || "✅ Tipp(ek) sikeresen leadva!");
+      setBets({}); // Töröljük a form mezőket
+      
+      // Felhasználó tippjeit újratöltjük
+      setTimeout(async () => {
+        const betsRes = await fetch("/api/bets/my-bets", {
+          headers: { "Authorization": `Bearer ${token}` },
+          cache: "no-store"
+        });
+        if (betsRes.ok) {
+          const data = await betsRes.json();
+          const betsMap: Record<number, BetInput> = {};
+          data.forEach((bet: any) => {
+            betsMap[bet.eventId] = {
+              predictedHomeGoals: bet.predictedHomeGoals,
+              predictedAwayGoals: bet.predictedAwayGoals,
+            };
+          });
+          setUserBets(betsMap);
+        }
+      }, 500);
+    } else {
+      const data = await res.json();
+      setMessage(data.message || "❌ Hiba történt a tipp leadásakor.");
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 px-4 py-10">
+      <div className="max-w-4xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 text-center">
+            Tippelés – Foci VB 2026
+          </h1>
+          <p className="mt-2 text-center text-gray-700">
+            Tippeld meg a mérkőzések pontos végeredményét! (Hazai – Vendég)
+          </p>
+        </header>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {events.length === 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center">
+              <p className="text-gray-800 font-semibold">
+                Jelenleg nincsenek elérhető események.
+              </p>
+            </div>
+          )}
+
+          {events.filter(e => isEventOpen(e.status)).map((event) => {
+            const open = isEventOpen(event.status);
+            const hasUserBet = event.id in userBets;
+
+            return (
+              <div
+                key={event.id}
+                className={`bg-white rounded-2xl shadow-sm border p-5 border-gray-200`}
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  {/* MECCS INFÓ */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-lg font-extrabold text-gray-900">
+                        {event.homeTeam}
+                      </span>
+                      <span className="text-gray-800 font-extrabold">–</span>
+                      <span className="text-lg font-extrabold text-gray-900">
+                        {event.awayTeam}
+                      </span>
+
+                      <span
+                        className="ml-2 text-xs font-bold px-2.5 py-1 rounded-full border bg-green-50 text-green-800 border-green-200"
+                      >
+                        Nyitott
+                      </span>
+
+                      {hasUserBet && (
+                        <span className="ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200">
+                          ✓ Te már tippeltél
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2 text-sm">
+                      <span className="text-gray-700">Kezdés:</span>
+                      <span className="font-semibold text-gray-900">
+                        {new Date(event.kickoffTime).toLocaleString("hu-HU")}
+                      </span>
+                      <span className="ml-4 text-gray-700">Tippelés díja:</span>
+                      <span className="font-semibold text-green-800">{event.creditCost} kredit</span>
+                    </div>
+                  </div>
+
+                  {/* TIPP INPUTOK */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      placeholder="Hazai"
+                      value={hasUserBet ? userBets[event.id]?.predictedHomeGoals : (bets[event.id]?.predictedHomeGoals ?? "")}
+                      onChange={(e) => handleChange(event.id, "predictedHomeGoals", e.target.value)}
+                      disabled={!open || hasUserBet}
+                      className={`w-20 h-12 rounded-xl border-2 text-center text-lg font-extrabold
+                        placeholder:text-gray-400
+                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500
+                        ${
+                          open && !hasUserBet
+                            ? "bg-white border-gray-300 text-gray-900"
+                            : "bg-gray-100 border-gray-200 text-gray-700 cursor-not-allowed"
+                        }`}
+                    />
+                    <span className="text-gray-900 font-extrabold text-lg">–</span>
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      placeholder="Vendég"
+                      value={hasUserBet ? userBets[event.id]?.predictedAwayGoals : (bets[event.id]?.predictedAwayGoals ?? "")}
+                      onChange={(e) => handleChange(event.id, "predictedAwayGoals", e.target.value)}
+                      disabled={!open || hasUserBet}
+                      className={`w-20 h-12 rounded-xl border-2 text-center text-lg font-extrabold
+                        placeholder:text-gray-400
+                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500
+                        ${
+                          open && !hasUserBet
+                            ? "bg-white border-gray-300 text-gray-900"
+                            : "bg-gray-100 border-gray-200 text-gray-700 cursor-not-allowed"
+                        }`}
+                    />
+                  </div>
+                </div>
+
+                {open && hasUserBet && (
+                  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm font-semibold text-blue-800">
+                      ✓ Te már tippeltél erre a meccsre. Az input mezők zárolva vannak.
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {message && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 text-center">
+              <p className="font-semibold text-gray-900">{message}</p>
+            </div>
+          )}
+
+          {hasOpenEvent && (
+            <button
+              type="submit"
+              className="w-full h-12 rounded-2xl bg-green-700 text-white font-extrabold shadow hover:bg-green-800 active:bg-green-900 transition"
+            >
+              Tipp leadása
+            </button>
+          )}
+
+          {!hasOpenEvent && events.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 text-center">
+              <p className="text-gray-800 font-semibold">
+                Jelenleg nincs nyitott mérkőzés, amire tippelni lehet.
+              </p>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}

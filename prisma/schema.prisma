@@ -1,0 +1,62 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  username String  @unique
+  password String
+  role     String  @default("USER")
+  points   Int     @default(0)
+  credits  Int     @default(0)
+  bets     Bet[]
+}
+
+model InviteCode {
+  code String @id
+  used Boolean @default(false)
+}
+
+model Event {
+  id             Int    @id @default(autoincrement())
+  homeTeam       String
+  awayTeam       String
+  kickoffTime    DateTime
+  status         String @default("OPEN")
+  finalHomeGoals Int?
+  finalAwayGoals Int?
+  creditCost     Int    @default(100)
+  bets           Bet[]
+}
+
+model Bet {
+  id                 Int    @id @default(autoincrement())
+  user               User   @relation(fields: [userId], references: [id])
+  userId             Int
+  event              Event  @relation(fields: [eventId], references: [id])
+  eventId            Int
+  predictedHomeGoals Int
+  predictedAwayGoals Int
+  pointsAwarded      Int    @default(0)
+  creditSpent        Int    @default(0)
+
+  @@unique([userId, eventId])
+}
+
+model CreditPool {
+  id         Int @id @default(autoincrement())
+  totalDaily Int @default(0)
+  totalChampionship Int @default(0)
+}
+
