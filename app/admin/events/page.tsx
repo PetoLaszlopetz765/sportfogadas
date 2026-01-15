@@ -53,7 +53,7 @@ export default function EventsAdminPage() {
     if (res.ok) {
       let data = await res.json();
       // Legújabb kickoffTime legyen elöl
-      data = data.sort((a, b) => new Date(b.kickoffTime).getTime() - new Date(a.kickoffTime).getTime());
+      data = data.sort((a: Event, b: Event) => new Date(b.kickoffTime).getTime() - new Date(a.kickoffTime).getTime());
       console.log("✓ Events loaded:", data.length, "items");
       setEvents(data);
     }
