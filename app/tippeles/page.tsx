@@ -1,3 +1,6 @@
+interface BetWithEventId extends BetInput {
+  eventId: number;
+}
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -48,7 +51,7 @@ export default function TippelesPage() {
         const data = await res.json();
         // Átalakítjuk a tippeket egy map-ba az eventId alapján
           const betsMap: Record<number, BetInput> = {};
-          data.forEach((bet: BetInput) => {
+          data.forEach((bet: BetWithEventId) => {
             betsMap[bet.eventId] = {
               predictedHomeGoals: bet.predictedHomeGoals,
               predictedAwayGoals: bet.predictedAwayGoals,
