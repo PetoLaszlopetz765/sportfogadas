@@ -281,7 +281,7 @@ export default function VersenyPage() {
                           {(() => {
                             // Csak nem-admin felhasználók tippjei számítanak a poolba
                             const nonAdminBets = bets.filter((b: { user?: { username?: string } }) => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
-                            const totalCreditsForEvent = nonAdminBets.reduce((sum, b) => sum + (b.creditSpent || 0), 0);
+                            const totalCreditsForEvent = nonAdminBets.reduce((sum: number, b: { creditSpent?: number }) => sum + (b.creditSpent || 0), 0);
                             const dailyPool = Math.round(totalCreditsForEvent * 0.6);
                             // Helyes tippelők (6 pontosok, nem admin)
                             const winners = nonAdminBets.filter(b => b.pointsAwarded === 6);
