@@ -284,7 +284,7 @@ export default function VersenyPage() {
                             const totalCreditsForEvent = nonAdminBets.reduce((sum: number, b: { creditSpent?: number }) => sum + (b.creditSpent || 0), 0);
                             const dailyPool = Math.round(totalCreditsForEvent * 0.6);
                             // Helyes tippelők (6 pontosok, nem admin)
-                            const winners = nonAdminBets.filter(b => b.pointsAwarded === 6);
+                            const winners = nonAdminBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
                             const winCount = winners.length;
                             return bets.map(bet => {
                               let wonCredit = 0;
