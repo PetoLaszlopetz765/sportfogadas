@@ -188,7 +188,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
       const isFinal = event.finalHomeGoals !== null && event.finalAwayGoals !== null && eventToCheck.status === "FINAL";
       if (isFinal) {
         // Döntő: ha nincs telitalálat, azok között osztjuk, akik eltalálták a győztest vagy döntetlent
-        const actualDiff = event.finalHomeGoals - event.finalAwayGoals;
+        const actualDiff = (event.finalHomeGoals ?? 0) - (event.finalAwayGoals ?? 0);
         const actualWinner = actualDiff > 0 ? "H" : actualDiff < 0 ? "A" : "D";
         const altWinners = allBets.filter(bet => {
           const predDiff = bet.predictedHomeGoals - bet.predictedAwayGoals;
