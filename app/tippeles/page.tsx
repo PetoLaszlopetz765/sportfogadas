@@ -1,7 +1,7 @@
+"use client";
 interface BetWithEventId extends BetInput {
   eventId: number;
 }
-"use client";
 
 import { useEffect, useMemo, useState } from "react";
 
