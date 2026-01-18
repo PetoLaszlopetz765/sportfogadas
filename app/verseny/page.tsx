@@ -39,17 +39,53 @@ interface Bet {
 }
 
 export default function VersenyPage() {
+  const [tab, setTab] = useState<"ranking" | "bets">("ranking");
   const [leaderboard, setLeaderboard] = useState<User[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
+  const [userEventIds, setUserEventIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"ranking" | "bets">("ranking");
   const [isAdmin, setIsAdmin] = useState(false);
   const [closeMsg, setCloseMsg] = useState("");
   const [closeLoading, setCloseLoading] = useState(false);
   const [pool, setPool] = useState<{ totalDaily: number, totalChampionship: number }>({ totalDaily: 0, totalChampionship: 0 });
   const [events, setEvents] = useState<any[]>([]);
-  // Fetch all events for the "Összes tippek" tab logic
+  // DEBUG: Log state when rendering bets tab
+  if (typeof window !== "undefined" && tab === "bets") {
+    // eslint-disable-next-line no-console
+    console.log('userEventIds:', userEventIds);
+    // eslint-disable-next-line no-console
+    console.log('events:', events.map(e => e.id));
+    // eslint-disable-next-line no-console
+    console.log('bets:', bets.map(b => b.event.id));
+  }
+  // ÚJ: Frissítés trigger figyelése (tippelés után)
+  useEffect(() => {
+    const handler = () => {
+      if (tab === "bets") {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        console.log("DEBUG: token from localStorage:", token);
+        fetch("/api/bets/all-bets", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        })
+          .then(res => res.ok ? res.json() : { bets: [], userEventIds: [] })
+          .then(data => {
+            console.log("/api/bets/all-bets response:", data);
+            setBets(data.bets || []);
+            setUserEventIds(data.userEventIds || []);
+            console.log("setBets:", data.bets || []);
+            console.log("setUserEventIds:", data.userEventIds || []);
+          });
+      }
+    };
+    window.addEventListener("storage", (e) => {
+      if (e.key === "refreshBets") handler();
+    });
+    return () => {
+      window.removeEventListener("storage", handler);
+    };
+  }, [tab]);
+  // Események frissítése tab váltáskor is, hogy mindig naprakész legyen
   useEffect(() => {
     if (tab === "bets") {
       fetch("/api/events")
@@ -57,6 +93,13 @@ export default function VersenyPage() {
         .then(setEvents);
     }
   }, [tab]);
+  // ...existing code...
+  // Események betöltése mindig mountkor is
+  useEffect(() => {
+    fetch("/api/events")
+      .then(res => res.ok ? res.json() : [])
+      .then(setEvents);
+  }, []);
 
   useEffect(() => {
     fetch("/api/creditpool").then(res => res.ok ? res.json() : { totalDaily: 0, totalChampionship: 0 }).then(setPool);
@@ -76,16 +119,30 @@ export default function VersenyPage() {
   useEffect(() => {
     async function loadData() {
       try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        console.log("DEBUG: token from localStorage (mount):", token);
         const [leaderRes, betsRes] = await Promise.all([
           fetch("/api/leaderboard"),
-          fetch("/api/bets/all-bets"),
+          fetch("/api/bets/all-bets", {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }),
         ]);
 
         if (leaderRes.ok) {
           setLeaderboard(await leaderRes.json());
         }
         if (betsRes.ok) {
-          setBets(await betsRes.json());
+          const data = await betsRes.json();
+          console.log("/api/bets/all-bets response (mount):", data);
+          if (Array.isArray(data)) {
+            setBets(data);
+            console.log("setBets (mount):", data);
+          } else {
+            setBets(data.bets || []);
+            setUserEventIds(data.userEventIds || []);
+            console.log("setBets (mount):", data.bets || []);
+            console.log("setUserEventIds (mount):", data.userEventIds || []);
+          }
         }
       } catch (err) {
         setError("Hálózati hiba");
@@ -245,17 +302,22 @@ export default function VersenyPage() {
         ) : (
           // ÚJ: ÖSSZES TIPPEK TAB - események elkülönítve, csak akkor láthatóak a tippek, ha a user is tippelt az eseményre
           <div className="flex flex-col gap-8">
-            {(isAdmin
-                ? events.filter(event => (event.status === "OPEN" || event.status === "NYITOTT") && event.finalHomeGoals == null && event.finalAwayGoals == null)
-                : Array.from(new Set(bets.map(bet => bet.event.id)))
-                    .map(eventId => events.find(e => e.id === eventId))
-                    .filter(Boolean)
-              )
-              .slice()
-              .sort((a, b) => new Date(b.kickoffTime).getTime() - new Date(a.kickoffTime).getTime())
-              .map(event => {
-                if (!event) return null;
-                const eventBets = bets.filter(bet => bet.event.id === event.id && bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin");
+            {(() => {
+              // Csoportosítás események szerint
+              const eventMap = new Map();
+              bets.filter(bet => bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin").forEach(bet => {
+                if (!eventMap.has(bet.event.id)) {
+                  eventMap.set(bet.event.id, {
+                    event: bet.event,
+                    bets: [],
+                  });
+                }
+                eventMap.get(bet.event.id).bets.push(bet);
+              });
+              // Események időrendben (legutóbbi elöl)
+              const events = Array.from(eventMap.values()).sort((a, b) => new Date(b.event.kickoffTime).getTime() - new Date(a.event.kickoffTime).getTime());
+              return events.map(({ event, bets }) => {
+                // Tipp lista és fejléc
                 return (
                   <div key={event.id} className="bg-white rounded-2xl shadow-md border-2 border-purple-300 p-6 mb-4">
                     {/* Esemény fejléc */}
@@ -269,80 +331,78 @@ export default function VersenyPage() {
                         <span className="text-sm text-gray-700">Végeredmény: {event.finalHomeGoals !== null ? <span className="font-semibold text-green-900">{event.finalHomeGoals}–{event.finalAwayGoals}</span> : <span className="text-gray-400">-</span>}</span>
                       </div>
                     </div>
-                    {/* Tipp lista vagy üzenet */}
-                    {eventBets.length === 0 ? (
-                      <div className="text-center text-lg text-gray-500 font-semibold py-8">Tippelj először!</div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="bg-purple-50 border-b border-purple-200">
-                              <th className="px-4 py-3 text-left font-semibold text-gray-900">Játékos</th>
-                              <th className="px-4 py-3 text-center font-semibold text-gray-900">Tippje</th>
-                              <th className="px-4 py-3 text-center font-semibold text-gray-900">Pont</th>
-                              <th className="px-4 py-3 text-center font-semibold text-gray-900">Nyeremény kredit</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            {(() => {
-                              const totalCreditsForEvent = eventBets.reduce((sum: number, b: Bet) => sum + (b.creditSpent || 0), 0);
-                              const dailyPool = Math.round(totalCreditsForEvent * 0.6);
-                              const winners = eventBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
-                              const winCount = winners.length;
-                              return eventBets.map((bet: any) => {
-                                let wonCredit = 0;
-                                if (
-                                  event.finalHomeGoals !== null &&
-                                  bet.pointsAwarded === 6 &&
-                                  winCount > 0 &&
-                                  bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin"
-                                ) {
-                                  wonCredit = Math.floor(dailyPool / winCount);
-                                }
-                                return (
-                                  <tr key={bet.id} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3">
-                                      <span className="font-semibold text-gray-900">{bet.user.username}</span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
-                                        {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <span className={`inline-block rounded px-2 py-1 font-bold ${
-                                        bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
-                                        bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
-                                        bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
-                                        "bg-purple-50 text-purple-900"
-                                      }`}>
-                                        {bet.pointsAwarded}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      {event.finalHomeGoals !== null ? (
-                                        wonCredit > 0 ? (
-                                          <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
-                                            {wonCredit}
-                                          </span>
-                                        ) : (
-                                          <span className="text-gray-400">0</span>
-                                        )
+                    {/* Tipp lista */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-purple-50 border-b border-purple-200">
+                            <th className="px-4 py-3 text-left font-semibold text-gray-900">Játékos</th>
+                            <th className="px-4 py-3 text-center font-semibold text-gray-900">Tippje</th>
+                            <th className="px-4 py-3 text-center font-semibold text-gray-900">Pont</th>
+                            <th className="px-4 py-3 text-center font-semibold text-gray-900">Nyeremény kredit</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {(() => {
+                            const nonAdminBets = bets.filter((b: { user?: { username?: string } }) => b.user && b.user.username && b.user.username.toLowerCase() !== "admin");
+                            const totalCreditsForEvent = nonAdminBets.reduce((sum: number, b: { creditSpent?: number }) => sum + (b.creditSpent || 0), 0);
+                            const dailyPool = Math.round(totalCreditsForEvent * 0.6);
+                            const winners = nonAdminBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
+                            const winCount = winners.length;
+                            return bets.map((bet: any) => {
+                              let wonCredit = 0;
+                              if (
+                                event.finalHomeGoals !== null &&
+                                bet.pointsAwarded === 6 &&
+                                winCount > 0 &&
+                                bet.user && bet.user.username && bet.user.username.toLowerCase() !== "admin"
+                              ) {
+                                wonCredit = Math.floor(dailyPool / winCount);
+                              }
+                              return (
+                                <tr key={bet.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3">
+                                    <span className="font-semibold text-gray-900">{bet.user.username}</span>
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
+                                      {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    <span className={`inline-block rounded px-2 py-1 font-bold ${
+                                      bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
+                                      bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
+                                      bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
+                                      "bg-purple-50 text-purple-900"
+                                    }`}>
+                                      {bet.pointsAwarded}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    {event.finalHomeGoals !== null ? (
+                                      wonCredit > 0 ? (
+                                        <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
+                                          {wonCredit}
+                                        </span>
                                       ) : (
-                                        <span className="text-gray-400">-</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              });
-                            })()}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                                        <span className="text-gray-400">0</span>
+                                      )
+                                    ) : (
+                                      <span className="text-gray-400">-</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 );
-              })}
+              });
+            })()}
           </div>
         )}
 

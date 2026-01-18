@@ -15,19 +15,15 @@ export async function GET(req: NextRequest) {
     }
     const userId = decoded.userId;
 
-    // Lekérjük, hogy a user mely eseményekre tippelt
-    const userBets = await prisma.bet.findMany({
-      where: { userId },
-      select: { eventId: true },
-    });
-    const eventIds = userBets.map(b => b.eventId);
-    if (eventIds.length === 0) {
-      return NextResponse.json([]); // Még semmire sem tippelt
-    }
-
-    // Csak azokat az eseményeket adjuk vissza, amelyekre a user is tippelt
+    // Minden tipp lekérése, admin tippek nélkül, csak bejelentkezett felhasználónak
     const bets = await prisma.bet.findMany({
-      where: { eventId: { in: eventIds } },
+      where: {
+        user: {
+          username: {
+            not: "admin"
+          }
+        }
+      },
       include: {
         user: {
           select: {
@@ -43,8 +39,11 @@ export async function GET(req: NextRequest) {
         { user: { username: "asc" } },
       ],
     });
-
-    return NextResponse.json(bets);
+    console.log("API /bets/all-bets: bets count:", bets.length);
+    if (bets.length > 0) {
+      console.log("API /bets/all-bets: first bet:", bets[0]);
+    }
+    return NextResponse.json({ bets });
   } catch (err) {
     console.error("All bets error:", err);
     return NextResponse.json(
