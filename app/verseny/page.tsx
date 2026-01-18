@@ -284,7 +284,7 @@ export default function VersenyPage() {
                           </thead>
                           <tbody className="divide-y divide-gray-200">
                             {(() => {
-                              const totalCreditsForEvent = eventBets.reduce((sum: number, b: { creditSpent?: number }) => sum + (b.creditSpent || 0), 0);
+                              const totalCreditsForEvent = eventBets.reduce((sum: number, b: Bet) => sum + (b.creditSpent || 0), 0);
                               const dailyPool = Math.round(totalCreditsForEvent * 0.6);
                               const winners = eventBets.filter((b: { pointsAwarded?: number }) => b.pointsAwarded === 6);
                               const winCount = winners.length;
