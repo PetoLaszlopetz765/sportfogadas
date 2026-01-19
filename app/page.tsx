@@ -13,7 +13,7 @@ export default function Home() {
             A baráti foci tippjáték – valódi pénz nélkül!
           </p>
           <p className="text-lg text-gray-600 mb-8">
-            Tippelj a világbajnokság meccsein, gyűjts pontokat, és nézd meg, milyen jó a tipped!
+            Tippelj a világbajnokság meccseire, gyűjts pontokat, és nézd meg, milyen jók a tippeid!
           </p>
         </div>
 
@@ -23,7 +23,7 @@ export default function Home() {
             <div className="text-3xl mb-3">🎯</div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Pontjelző Rendszer</h3>
             <p className="text-gray-700 text-sm">
-              Pontozd az összes meccseket és nézd meg a valós időben, hogyan teljesítesz.
+              Tippelj az összes meccsre és nézd meg hogyan teljesítesz.
             </p>
           </div>
 
@@ -31,7 +31,7 @@ export default function Home() {
             <div className="text-3xl mb-3">🏆</div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Rangsor</h3>
             <p className="text-gray-700 text-sm">
-              Versenyzetek barátaitokkal és érkeznétek meg az élre a legjobb tippelőként.
+              Versenyezz barátaiddal és legyél te az első a legjobb tippelőként.
             </p>
           </div>
 
@@ -59,7 +59,7 @@ export default function Home() {
               <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">2</span>
               <div>
                 <p className="font-semibold text-gray-900">Tippelj az összes meccsre</p>
-                <p className="text-gray-600 text-sm">Minden egyes meccsre becsüld meg a végeredményt – hány gól esik az egyik, hány a másik csapatnak.</p>
+                <p className="text-gray-600 text-sm">Minden egyes meccsre tippeld meg a végeredményt – hány gól esik az egyik, hány a másik csapatnak.</p>
               </div>
             </li>
             <li className="flex gap-4">
@@ -73,7 +73,7 @@ export default function Home() {
               <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">4</span>
               <div>
                 <p className="font-semibold text-gray-900">Nézd meg a rangsort</p>
-                <p className="text-gray-600 text-sm">Versengj a barátaidnak és nézd meg, ki a legjobbak a tippelésben!</p>
+                <p className="text-gray-600 text-sm">Versengj a barátaiddal és nézd meg, kik a legjobbak a tippelésben!</p>
               </div>
             </li>
           </ol>
@@ -92,6 +92,12 @@ export default function Home() {
             className="px-8 py-4 bg-gray-900 text-white font-bold rounded-2xl shadow-lg hover:bg-black transition text-center"
           >
             Regisztráció
+          </Link>
+          <Link
+            href="/szabalyzat"
+            className="px-8 py-4 bg-purple-600 text-white font-bold rounded-2xl shadow-lg hover:bg-purple-700 transition text-center"
+          >
+            Szabályzat
           </Link>
         </div>
 
