@@ -156,7 +156,7 @@ export default function VersenyPage() {
 
   // Következő nyitott esemény napi poolja (halmozott összeg)
   const nextEvent = [...events]
-    .filter((e) => e.status !== "CLOSED" && e.status !== "LEZÁRT")
+    .filter((e) => e.finalHomeGoals === null && e.finalAwayGoals === null)
     .sort((a, b) => new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime())[0];
 
   const nextEventPool = nextEvent?.dailyPool

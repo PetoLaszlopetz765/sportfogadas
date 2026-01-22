@@ -64,6 +64,24 @@ export async function GET() {
       },
       orderBy: { kickoffTime: "asc" },
     });
+
+    // Dinamikusan átszámoljuk a carriedFromPrevious értékeket
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      if (!event.dailyPool) continue;
+
+      // Az előző esemény keresése (időrendben)
+      const previousEvent = events
+        .filter(e => e.kickoffTime < event.kickoffTime && e.dailyPool)
+        .sort((a, b) => b.kickoffTime.getTime() - a.kickoffTime.getTime())[0];
+
+      if (previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0) {
+        // Az előző esemény pool-ja nem lett szétosztva, átgöngyöljük
+        const carriedAmount = previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious;
+        event.dailyPool.carriedFromPrevious = carriedAmount;
+      }
+    }
+
     return NextResponse.json(events);
   } catch (err) {
     console.error(err);

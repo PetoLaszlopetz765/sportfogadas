@@ -50,15 +50,31 @@ export async function PUT(
       return NextResponse.json({ message: "Esemény nem található" }, { status: 404 });
     }
 
+    // Az előző esemény maradékának kiszámítása
+    const previousEvent = await prisma.event.findFirst({
+      where: {
+        kickoffTime: { lt: event.kickoffTime },
+        status: { in: ["CLOSED"] },
+      },
+      orderBy: { kickoffTime: 'desc' },
+      include: { dailyPool: true },
+    });
+
+    // Ha az előző esemény poolját nem osztották ki (totalDistributed == 0),
+    // akkor a teljes maradék (totalDaily + carriedFromPrevious) átjön.
+    const carriedFromPrevious = previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0
+      ? (previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious)
+      : 0;
+
     // DailyPool létrehozása vagy frissítése
     const dailyPool = await prisma.dailyPool.upsert({
       where: { eventId },
-      update: { totalDaily },
+      update: { totalDaily, carriedFromPrevious },
       create: {
         eventId,
         date: new Date(event.kickoffTime),
         totalDaily,
-        carriedFromPrevious: 0,
+        carriedFromPrevious,
       },
     });
 

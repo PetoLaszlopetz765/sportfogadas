@@ -48,6 +48,28 @@ export async function GET(req: NextRequest) {
       console.log("API /bets/all-bets: first bet event:", bets[0].event);
       console.log("API /bets/all-bets: first bet dailyPool:", bets[0].event.dailyPool);
     }
+
+    // Dinamikusan átszámoljuk a carriedFromPrevious értékeket
+    const allEvents = await prisma.event.findMany({
+      include: { dailyPool: true },
+      orderBy: { kickoffTime: "asc" },
+    });
+
+    for (const bet of bets) {
+      if (!bet.event.dailyPool) continue;
+
+      // Az előző esemény keresése (időrendben)
+      const previousEvent = allEvents
+        .filter(e => e.kickoffTime < bet.event.kickoffTime && e.dailyPool)
+        .sort((a, b) => b.kickoffTime.getTime() - a.kickoffTime.getTime())[0];
+
+      if (previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0) {
+        // Az előző esemény pool-ja nem lett szétosztva, átgöngyöljük
+        const carriedAmount = previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious;
+        bet.event.dailyPool.carriedFromPrevious = carriedAmount;
+      }
+    }
+
     return NextResponse.json({ bets });
   } catch (err) {
     console.error("All bets error:", err);
