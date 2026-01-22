@@ -216,85 +216,162 @@ export default function AdminUsersPage() {
           </form>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-blue-50">
-                <th className="py-2 px-3 text-left text-gray-900 font-bold">Felhasználónév</th>
-                <th className="py-2 px-3 text-left text-gray-900 font-bold">Szerep</th>
-                <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
-                <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
-                <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit módosítás</th>
-                <th className="py-2 px-3 text-left text-gray-900 font-bold">Jelszó módosítás</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(users) && users.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
-              ) : (Array.isArray(users) && users.length > 0 ? (
-                users.map(user => (
-                  <tr key={user.id} className="border-t border-gray-100 hover:bg-blue-50">
-                    <td className="py-2 px-3 font-semibold text-gray-900">{user.username}</td>
-                    <td className="py-2 px-3 text-blue-800 font-bold">{user.role}</td>
-                    <td className="py-2 px-3 text-gray-900">{typeof user.points === 'number' ? user.points : '-'}</td>
-                    <td className="py-2 px-3">
-                      <span className="font-mono text-base text-gray-900">{user.credits}</span>
-                    </td>
-                    <td className="py-2 px-3">
-                      <div className="flex flex-row gap-2 items-center">
-                        <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handleCreditUpdate(user.id); }}>
+          {/* Asztali nézet: táblázat */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-blue-50">
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Felhasználónév</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Szerep</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit módosítás</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Jelszó módosítás</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.isArray(users) && users.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center py-4 text-gray-500">Nincs felhasználó</td></tr>
+                ) : (Array.isArray(users) && users.length > 0 ? (
+                  users.map(user => (
+                    <tr key={user.id} className="border-t border-gray-100 hover:bg-blue-50">
+                      <td className="py-2 px-3 font-semibold text-gray-900">{user.username}</td>
+                      <td className="py-2 px-3 text-blue-800 font-bold">{user.role}</td>
+                      <td className="py-2 px-3 text-gray-900">{typeof user.points === 'number' ? user.points : '-'}</td>
+                      <td className="py-2 px-3">
+                        <span className="font-mono text-base text-gray-900">{user.credits}</span>
+                      </td>
+                      <td className="py-2 px-3">
+                        <div className="flex flex-row gap-2 items-center">
+                          <form className="flex flex-row gap-2 items-center" onSubmit={e => { e.preventDefault(); handleCreditUpdate(user.id); }}>
+                            <input
+                              type="number"
+                              value={creditEdit[user.id] || ""}
+                              onChange={e => handleCreditChange(user.id, e.target.value)}
+                              className="border border-blue-300 rounded-xl px-2 py-1 w-20 text-gray-900 bg-white shadow-sm"
+                              placeholder="Új kredit"
+                            />
+                            <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-3 py-1 rounded-xl shadow">Módosít</button>
+                          </form>
+                          <button
+                            className="bg-red-600 hover:bg-red-800 text-white font-bold px-3 py-1 rounded-xl shadow ml-2"
+                            title="Felhasználó törlése"
+                            onClick={async () => {
+                              if (!window.confirm(`Biztosan törölni akarod ${user.username} felhasználót? Ez végleges!`)) return;
+                              if (!token) return;
+                              const res = await fetch(`/api/users/${user.id}`, {
+                                method: "DELETE",
+                                headers: { Authorization: `Bearer ${token}` },
+                              });
+                              if (res.ok) {
+                                fetchUsers(token);
+                              } else {
+                                const data = await res.json().catch(() => ({}));
+                                alert(data.message || "Hiba a törlés során");
+                              }
+                            }}
+                          >
+                            Törlés
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-2 px-3">
+                        <div className="flex flex-row gap-2 items-center">
                           <input
-                            type="number"
-                            value={creditEdit[user.id] || ""}
-                            onChange={e => handleCreditChange(user.id, e.target.value)}
-                            className="border border-blue-300 rounded-xl px-2 py-1 w-20 text-gray-900 bg-white shadow-sm"
-                            placeholder="Új kredit"
+                            type="password"
+                            value={passwordEdit[user.id] || ""}
+                            onChange={e => setPasswordEdit({ ...passwordEdit, [user.id]: e.target.value })}
+                            className="border border-purple-300 rounded-xl px-2 py-1 w-28 text-gray-900 bg-white shadow-sm"
+                            placeholder="Új jelszó"
                           />
-                          <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-3 py-1 rounded-xl shadow">Módosít</button>
-                        </form>
-                        <button
-                          className="bg-red-600 hover:bg-red-800 text-white font-bold px-3 py-1 rounded-xl shadow ml-2"
-                          title="Felhasználó törlése"
-                          onClick={async () => {
-                            if (!window.confirm(`Biztosan törölni akarod ${user.username} felhasználót? Ez végleges!`)) return;
-                            if (!token) return;
-                            const res = await fetch(`/api/users/${user.id}`, {
-                              method: "DELETE",
-                              headers: { Authorization: `Bearer ${token}` },
-                            });
-                            if (res.ok) {
-                              fetchUsers(token);
-                            } else {
-                              const data = await res.json().catch(() => ({}));
-                              alert(data.message || "Hiba a törlés során");
-                            }
-                          }}
-                        >
-                          Törlés
-                        </button>
-                      </div>
-                    </td>
-                    <td className="py-2 px-3">
-                      <div className="flex flex-row gap-2 items-center">
-                        <input
-                          type="password"
-                          value={passwordEdit[user.id] || ""}
-                          onChange={e => setPasswordEdit({ ...passwordEdit, [user.id]: e.target.value })}
-                          className="border border-purple-300 rounded-xl px-2 py-1 w-28 text-gray-900 bg-white shadow-sm"
-                          placeholder="Új jelszó"
-                        />
-                        <button
-                          onClick={() => handlePasswordUpdate(user.id)}
-                          className="bg-purple-700 hover:bg-purple-900 text-white font-bold px-3 py-1 rounded-xl shadow"
-                        >
-                          Módosít
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : null)}
-            </tbody>
-          </table>
+                          <button
+                            onClick={() => handlePasswordUpdate(user.id)}
+                            className="bg-purple-700 hover:bg-purple-900 text-white font-bold px-3 py-1 rounded-xl shadow"
+                          >
+                            Módosít
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : null)}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobil nézet: kártyák */}
+          <div className="grid gap-3 md:hidden">
+            {Array.isArray(users) && users.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">Nincs felhasználó</div>
+            ) : (Array.isArray(users) && users.length > 0 ? (
+              users.map(user => (
+                <div key={user.id} className="border border-gray-200 rounded-xl p-3 bg-white shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <div className="font-extrabold text-gray-900">{user.username}</div>
+                      <div className="text-xs text-gray-600">Pont: {typeof user.points === 'number' ? user.points : '-'}</div>
+                    </div>
+                    <span className="text-xs font-bold px-2 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200">{user.role}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-gray-700">Kredit:</span>
+                    <span className="font-mono font-bold text-gray-900">{user.credits}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={creditEdit[user.id] || ""}
+                        onChange={e => handleCreditChange(user.id, e.target.value)}
+                        className="flex-1 border border-blue-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
+                        placeholder="Új kredit"
+                      />
+                      <button
+                        onClick={() => handleCreditUpdate(user.id)}
+                        className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
+                      >
+                        Kredit
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        value={passwordEdit[user.id] || ""}
+                        onChange={e => setPasswordEdit({ ...passwordEdit, [user.id]: e.target.value })}
+                        className="flex-1 border border-purple-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
+                        placeholder="Új jelszó"
+                      />
+                      <button
+                        onClick={() => handlePasswordUpdate(user.id)}
+                        className="bg-purple-700 hover:bg-purple-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
+                      >
+                        Jelszó
+                      </button>
+                    </div>
+                    <button
+                      className="w-full bg-red-600 hover:bg-red-800 text-white font-bold px-3 py-2 rounded-xl shadow"
+                      onClick={async () => {
+                        if (!window.confirm(`Biztosan törölni akarod ${user.username} felhasználót? Ez végleges!`)) return;
+                        if (!token) return;
+                        const res = await fetch(`/api/users/${user.id}`, {
+                          method: "DELETE",
+                          headers: { Authorization: `Bearer ${token}` },
+                        });
+                        if (res.ok) {
+                          fetchUsers(token);
+                        } else {
+                          const data = await res.json().catch(() => ({}));
+                          alert(data.message || "Hiba a törlés során");
+                        }
+                      }}
+                    >
+                      Törlés
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : null)}
+          </div>
         </div>
       </div>
     </div>
