@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tippelde –",
+  title: "⚽ Tippelde",
   description: "Baráti tippjáték – valódi pénz nélkül",
 };
 
