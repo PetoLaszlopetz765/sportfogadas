@@ -36,11 +36,24 @@ export async function POST(req: NextRequest) {
 
     const { homeTeam, awayTeam, kickoffTime, status, creditCost } = await req.json();
 
+    // Magyar időzóna (Europe/Budapest) → UTC átalakítás
+    // A frontendről érkező kickoffTime pl. "2026-01-22T20:00" magyar idő, ezt UTC-re kell konvertálni
+    function localToUTC(dateString: string) {
+      // Europe/Budapest időzóna
+      const localDate = new Date(dateString);
+      // Budapest offset (télen +1, nyáron +2)
+      const offsetMinutes = localDate.getTimezoneOffset();
+      // UTC idő
+      return new Date(localDate.getTime() - offsetMinutes * 60000);
+    }
+
+    const kickoffUTC = localToUTC(kickoffTime);
+
     const event = await prisma.event.create({
       data: {
         homeTeam,
         awayTeam,
-        kickoffTime: new Date(kickoffTime),
+        kickoffTime: kickoffUTC,
         status: status || "OPEN",
         creditCost: creditCost || 100,
       },

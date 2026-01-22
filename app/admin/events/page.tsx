@@ -500,7 +500,7 @@ export default function EventsAdminPage() {
                         <p className="text-sm text-gray-700 mt-1">
                           Kezdés:{" "}
                           <span className="font-semibold text-gray-900">
-                            {new Date(e.kickoffTime).toLocaleString("hu-HU")}
+                            {new Date(e.kickoffTime).toLocaleString("hu-HU", { timeZone: "Europe/Budapest" })}
                           </span>
                         <span className="ml-4 text-gray-700">Tipp díj:</span>
                         <span className="font-semibold text-green-800">{e.creditCost} kredit</span>
