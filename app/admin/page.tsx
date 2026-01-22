@@ -1,5 +1,4 @@
-﻿
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -10,7 +9,8 @@ export default function AdminPage() {
   const [pool, setPool] = useState({ totalDaily: 0, totalChampionship: 0 });
   const [poolEdit, setPoolEdit] = useState({ totalDaily: "", totalChampionship: "" });
   const [error, setError] = useState<string | null>(null);
-
+  const [hardResetPassword, setHardResetPassword] = useState("");
+  const [hardResetLoading, setHardResetLoading] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -167,29 +167,6 @@ export default function AdminPage() {
             <h2 className="text-xl font-extrabold text-blue-800 mb-4">Meghívókódok kezelése</h2>
             <span className="text-blue-700">Új kód generálás, másolás, lista</span>
           </Link>
-          
-          {/* Hard reset gomb */}
-          <div className="bg-white rounded-2xl shadow-sm border border-red-300 p-8 mb-8">
-            <h2 className="text-xl font-extrabold text-red-800 mb-4">⚠️ Hard Reset</h2>
-            <p className="text-red-700 mb-4">Ez a gomb minden felhasználót, eseményt és tippet töröl! Csak admin használhatja.</p>
-            <button
-              onClick={async () => {
-                if (!window.confirm("Biztosan törölni akarod az összes adatot? Ez nem visszavonható!")) return;
-                const res = await fetch("/api/admin/hard-reset", {
-                  method: "POST",
-                  headers: {
-                    "Authorization": `Bearer ${token}`,
-                  },
-                });
-                const data = await res.json();
-                alert(data.message || "Hard reset lefutott.");
-                window.location.reload();
-              }}
-              className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition"
-            >
-              Minden adat törlése
-            </button>
-          </div>
 
           {/* Esemény kezelés */}
           <Link
@@ -230,6 +207,42 @@ export default function AdminPage() {
               <span>→</span>
             </div>
           </Link>
+        </div>
+
+        {/* Hard reset panel: legalul, extra védelemmel */}
+        <div className="bg-white rounded-2xl shadow-sm border border-red-300 p-8 mt-16 mb-8 flex flex-col items-center">
+          <h2 className="text-xl font-extrabold text-red-800 mb-4">⚠️ Hard Reset</h2>
+          <p className="text-red-700 mb-4 text-center">Ez a gomb minden felhasználót, eseményt és tippet töröl! Csak admin használhatja.<br/>A törléshez add meg újra az admin jelszavad!</p>
+          <input
+            type="password"
+            placeholder="Admin jelszó"
+            className="w-full max-w-xs border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white shadow-sm mb-4"
+            value={hardResetPassword}
+            onChange={e => setHardResetPassword(e.target.value)}
+          />
+          <button
+            disabled={!hardResetPassword || hardResetLoading}
+            onClick={async () => {
+              if (!window.confirm("Biztosan törölni akarod az összes adatot? Ez nem visszavonható!")) return;
+              setHardResetLoading(true);
+              const res = await fetch("/api/admin/hard-reset", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ password: hardResetPassword }),
+              });
+              const data = await res.json();
+              setHardResetLoading(false);
+              setHardResetPassword("");
+              alert(data.message || "Hard reset lefutott.");
+              window.location.reload();
+            }}
+            className={`px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition w-full max-w-xs ${hardResetLoading ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            {hardResetLoading ? "Törlés folyamatban..." : "Minden adat törlése"}
+          </button>
         </div>
 
         <div className="text-center text-sm text-gray-700">
