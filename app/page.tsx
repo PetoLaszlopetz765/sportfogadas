@@ -119,7 +119,7 @@ export default function Home() {
         >
           <div className="flex-shrink-0 w-full md:w-1/3 flex justify-center items-center bg-purple-800 p-4 md:p-0">
             <img
-              src="https://tarsashazkezelokozpont.hu/wp-content/uploads/2025/09/logo_fent_nev_feher.png"
+              src="https://tarsashazkezelokozpont.hu/wp-content/uploads/2025/09/logo_fent_nev_lila.png"
               alt="Társasházkezelő Központ logó"
               className="h-32 md:h-40 object-contain mx-auto"
               style={{ background: 'rgba(0,0,0,0.05)' }}
