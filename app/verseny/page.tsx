@@ -508,7 +508,7 @@ export default function VersenyPage() {
                                     bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
                                     "bg-purple-50 text-purple-900"
                                   }`}>
-                                    {bet.pointsAwarded}p
+                                    <span className="mr-1 text-xs text-gray-700">szerzett pont:</span>{bet.pointsAwarded}
                                   </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm mb-2">
