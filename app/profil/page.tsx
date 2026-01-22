@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+//
+interface LeaderboardUser {
+  id: number;
+  username: string;
+  points: number;
+  credits: number;
+  role: string;
+  tipsCount: number;
+  perfectCount: number;
+}
 import Link from "next/link";
 
 interface Bet {
@@ -29,6 +39,8 @@ export default function ProfilPage() {
   const [error, setError] = useState("");
   const [totalPoints, setTotalPoints] = useState(0);
   const [profile, setProfile] = useState<{ username: string, credits: number, points: number } | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
+  const [userRank, setUserRank] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
@@ -44,6 +56,25 @@ export default function ProfilPage() {
     }
     loadProfile();
   }, []);
+
+  // Fetch leaderboard and determine user rank
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const res = await fetch("/api/leaderboard");
+        if (res.ok) {
+          const data: LeaderboardUser[] = await res.json();
+          setLeaderboard(data);
+          if (profile) {
+            const filtered = data.filter(u => u.role !== "ADMIN");
+            const idx = filtered.findIndex(u => u.username === profile.username);
+            setUserRank(idx !== -1 ? idx + 1 : null);
+          }
+        }
+      } catch {}
+    }
+    if (profile) fetchLeaderboard();
+  }, [profile]);
 
   useEffect(() => {
     async function loadBets() {
@@ -94,6 +125,18 @@ export default function ProfilPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-gray-900">Saját Tippjeim</h1>
           <p className="text-gray-700 mt-2">Összes tippem és pontjaim</p>
+          {/* User ranking card */}
+          {profile && userRank && (
+            <div className="flex flex-col items-center justify-center mt-4 mb-2">
+              <div className="bg-gradient-to-r from-purple-100 to-purple-200 border border-purple-300 rounded-2xl px-8 py-4 text-center shadow-md">
+                <div className="text-lg font-semibold text-purple-900 mb-1">Jelenlegi helyezésed</div>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="inline-flex items-center justify-center w-12 h-12 rounded-full font-extrabold text-white text-2xl bg-purple-600">{userRank}</span>
+                  <span className="font-bold text-purple-900 text-xl">{profile.username}</span>
+                </div>
+              </div>
+            </div>
+          )}
           {profile && (
             <div className="flex flex-col md:flex-row gap-4 mt-4 items-center justify-center">
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-6 py-3 text-yellow-900 font-semibold text-lg">
@@ -224,8 +267,8 @@ export default function ProfilPage() {
                         bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
                         bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
                         "bg-purple-50 text-purple-900"
-                      }`}>
-                        <span className="mr-1 text-xs text-gray-700">pont:</span>{bet.pointsAwarded}
+                      } text-lg md:text-base font-extrabold px-3 py-1`}>
+                        <span className="mr-1 text-xs text-gray-700 font-normal">pont:</span>{bet.pointsAwarded}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm mb-2">

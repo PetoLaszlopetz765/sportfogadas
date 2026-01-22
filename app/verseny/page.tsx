@@ -342,7 +342,7 @@ export default function VersenyPage() {
                       </div>
                     </div>
                     <span className="inline-block bg-purple-50 border border-purple-200 rounded-lg px-3 py-1 font-bold text-purple-900 text-sm">
-                      <span className="mr-1 text-xs text-gray-700">pont:</span>{user.points}
+                      <span className="mr-1 text-xs text-gray-700 font-normal">pont:</span><span className="text-lg font-extrabold">{user.points}</span>
                     </span>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -507,8 +507,8 @@ export default function VersenyPage() {
                                     bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
                                     bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
                                     "bg-purple-50 text-purple-900"
-                                  }`}>
-                                    <span className="mr-1 text-xs text-gray-700">szerzett pont:</span>{bet.pointsAwarded}
+                                  } text-lg md:text-base font-extrabold px-3 py-1`}>
+                                      <span className="mr-1 text-xs text-gray-700 font-normal">szerzett pont:</span>{bet.pointsAwarded}
                                   </span>
                                 </div>
                                 <div className="flex items-center justify-between text-sm mb-2">
