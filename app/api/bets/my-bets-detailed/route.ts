@@ -28,23 +28,36 @@ export async function GET(req: NextRequest) {
 
     const userId = decoded.userId;
 
-    // Felhasználó összes tippjei és az eventos adatok, plusz kredit és nyeremény számítás
+    // Felhasználó összes tippjei, az események és a napi pool adatokkal
     const bets = await prisma.bet.findMany({
       where: { userId },
       include: {
-        event: true,
+        event: {
+          include: {
+            dailyPool: true,
+            bets: true, // include all bets for this event to count telitalálat
+          },
+        },
       },
       orderBy: {
         event: { kickoffTime: "desc" },
       },
     });
 
-    // Nyeremény számítás: ha pontot kapott, akkor a feltett kredit * szorzó (pl. 2x, 3x, 4x, 6x)
-    // Itt a szorzó a pontszám, de ezt később lehet finomítani
+    // Nyeremény számítás: ha az esemény poolja ki lett osztva (totalDistributed > 0) ÉS a felhasználó 6 pontot kapott, akkor nyeremény = totalDistributed / telitalálat szám
     const betsWithWinnings = bets.map((bet) => {
       let winnings = 0;
-      if (bet.pointsAwarded > 0 && bet.creditSpent > 0) {
-        winnings = bet.creditSpent * bet.pointsAwarded;
+      const dailyPool = bet.event?.dailyPool;
+      if (
+        dailyPool &&
+        dailyPool.totalDistributed > 0 &&
+        bet.pointsAwarded === 6
+      ) {
+        // Telitalálatosok száma az eseményen
+        const telitalalatokSzama = bet.event.bets?.filter((b: any) => b.pointsAwarded === 6).length;
+        // Ha nincs bets reláció, fallback: 1 (de normálisan mindig van)
+        const winnersCount = telitalalatokSzama || 1;
+        winnings = Math.floor(dailyPool.totalDistributed / winnersCount);
       }
       return {
         ...bet,
