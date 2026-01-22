@@ -278,45 +278,54 @@ export default function VersenyPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {leaderboard.filter(user => user.role !== "ADMIN").map((user, index) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-white ${
-                            index === 0 ? "bg-yellow-500" :
-                            index === 1 ? "bg-gray-400" :
-                            index === 2 ? "bg-orange-600" :
-                            "bg-gray-300"
-                          }`}>
-                            {index + 1}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900">{user.username}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className="inline-block bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 font-bold text-purple-900">
-                            {user.points}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className="inline-block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 font-bold text-blue-900">
-                            {user.credits}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className="inline-block bg-green-50 border border-green-200 rounded-lg px-4 py-2 font-bold text-green-900">
-                            {user.tipsCount}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className="inline-block bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 font-bold text-yellow-900">
-                            {user.perfectCount}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {leaderboard
+                      .filter(user => user.role !== "ADMIN")
+                      .slice() // copy to avoid mutating state
+                      .sort((a, b) => {
+                        if (b.points !== a.points) return b.points - a.points;
+                        if (b.credits !== a.credits) return b.credits - a.credits;
+                        if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+                        return a.username.localeCompare(b.username);
+                      })
+                      .map((user, index) => (
+                        <tr key={user.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-4">
+                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-white ${
+                              index === 0 ? "bg-yellow-500" :
+                              index === 1 ? "bg-gray-400" :
+                              index === 2 ? "bg-orange-600" :
+                              "bg-gray-300"
+                            }`}>
+                              {index + 1}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900">{user.username}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="inline-block bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 font-bold text-purple-900">
+                              {user.points}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="inline-block bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 font-bold text-blue-900">
+                              {user.credits}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="inline-block bg-green-50 border border-green-200 rounded-lg px-4 py-2 font-bold text-green-900">
+                              {user.tipsCount}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-center">
+                            <span className="inline-block bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 font-bold text-yellow-900">
+                              {user.perfectCount}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -324,43 +333,52 @@ export default function VersenyPage() {
 
             {/* Mobil nézet: kártyák */}
             <div className="grid gap-3 md:hidden">
-              {leaderboard.filter(user => user.role !== "ADMIN").map((user, index) => (
-                <div key={user.id} className="border border-purple-200 rounded-xl p-4 bg-white shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-white text-lg ${
-                        index === 0 ? "bg-yellow-500" :
-                        index === 1 ? "bg-gray-400" :
-                        index === 2 ? "bg-orange-600" :
-                        "bg-gray-300"
-                      }`}>
-                        {index + 1}
+              {leaderboard
+                .filter(user => user.role !== "ADMIN")
+                .slice()
+                .sort((a, b) => {
+                  if (b.points !== a.points) return b.points - a.points;
+                  if (b.credits !== a.credits) return b.credits - a.credits;
+                  if (b.perfectCount !== a.perfectCount) return b.perfectCount - a.perfectCount;
+                  return a.username.localeCompare(b.username);
+                })
+                .map((user, index) => (
+                  <div key={user.id} className="border border-purple-200 rounded-xl p-4 bg-white shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-white text-lg ${
+                          index === 0 ? "bg-yellow-500" :
+                          index === 1 ? "bg-gray-400" :
+                          index === 2 ? "bg-orange-600" :
+                          "bg-gray-300"
+                        }`}>
+                          {index + 1}
+                        </span>
+                        <div>
+                          <div className="font-extrabold text-gray-900">{user.username}</div>
+                          <div className="text-xs text-gray-600">Tippek: {user.tipsCount}</div>
+                        </div>
+                      </div>
+                      <span className="inline-block bg-purple-50 border border-purple-200 rounded-lg px-3 py-1 font-bold text-purple-900 text-sm">
+                        <span className="mr-1 text-xs text-gray-700 font-normal">pont:</span><span className="text-lg font-extrabold">{user.points}</span>
                       </span>
-                      <div>
-                        <div className="font-extrabold text-gray-900">{user.username}</div>
-                        <div className="text-xs text-gray-600">Tippek: {user.tipsCount}</div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Kredit</span>
+                        <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-bold text-blue-900 text-sm">
+                          {user.credits}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-600">Telitalálat</span>
+                        <span className="inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 font-bold text-yellow-900 text-sm">
+                          {user.perfectCount}
+                        </span>
                       </div>
                     </div>
-                    <span className="inline-block bg-purple-50 border border-purple-200 rounded-lg px-3 py-1 font-bold text-purple-900 text-sm">
-                      <span className="mr-1 text-xs text-gray-700 font-normal">pont:</span><span className="text-lg font-extrabold">{user.points}</span>
-                    </span>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-600">Kredit</span>
-                      <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-bold text-blue-900 text-sm">
-                        {user.credits}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-600">Telitalálat</span>
-                      <span className="inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 font-bold text-yellow-900 text-sm">
-                        {user.perfectCount}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         ) : (
