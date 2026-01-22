@@ -342,26 +342,20 @@ export default function VersenyPage() {
                       </div>
                     </div>
                     <span className="inline-block bg-purple-50 border border-purple-200 rounded-lg px-3 py-1 font-bold text-purple-900 text-sm">
-                      {user.points}p
+                      <span className="mr-1 text-xs text-gray-700">pont:</span>{user.points}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-600 mb-1">Kredit</div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">Kredit</span>
                       <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-bold text-blue-900 text-sm">
                         {user.credits}
                       </span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-600 mb-1">Telitalálat</div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-600">Telitalálat</span>
                       <span className="inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 font-bold text-yellow-900 text-sm">
                         {user.perfectCount}
-                      </span>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-600 mb-1">Helye</div>
-                      <span className="inline-block bg-gray-50 border border-gray-200 rounded px-2 py-1 font-bold text-gray-900 text-sm">
-                        #{index + 1}
                       </span>
                     </div>
                   </div>

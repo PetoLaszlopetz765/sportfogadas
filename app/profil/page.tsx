@@ -218,49 +218,49 @@ export default function ProfilPage() {
                 {bets.map((bet) => (
                   <div key={bet.id} className="border border-purple-200 rounded-xl p-3 bg-purple-50/40">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-gray-900">{bet.event.homeTeam} – {bet.event.awayTeam}</span>
-                      <span className={`inline-block rounded px-2 py-1 text-xs font-bold ${
+                      <span className="font-semibold text-gray-900 text-left">{bet.event.homeTeam} – {bet.event.awayTeam}</span>
+                      <span className={`inline-block rounded px-2 py-1 text-xs font-bold text-right ${
                         bet.pointsAwarded === 0 ? "bg-red-50 text-red-900" :
                         bet.pointsAwarded <= 2 ? "bg-yellow-50 text-yellow-900" :
                         bet.pointsAwarded <= 4 ? "bg-blue-50 text-blue-900" :
                         "bg-purple-50 text-purple-900"
                       }`}>
-                        {bet.pointsAwarded}p
+                        <span className="mr-1 text-xs text-gray-700">pont:</span>{bet.pointsAwarded}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900">
+                      <span className="text-gray-600 text-left">Tipp</span>
+                      <span className="inline-block bg-blue-50 border border-blue-200 rounded px-2 py-1 font-semibold text-blue-900 text-right">
                         {bet.predictedHomeGoals}–{bet.predictedAwayGoals}
                       </span>
-                      <span className="text-gray-600">Tipp</span>
                     </div>
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900">
+                      <span className="text-gray-600 text-left">Végeredmény</span>
+                      <span className="inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-green-900 text-right">
                         {bet.event.finalHomeGoals !== null && bet.event.finalAwayGoals !== null ? `${bet.event.finalHomeGoals}–${bet.event.finalAwayGoals}` : '-'}
                       </span>
-                      <span className="text-gray-600">Végeredmény</span>
                     </div>
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 font-semibold text-yellow-900">
+                      <span className="text-gray-600 text-left">Feltett kredit</span>
+                      <span className="inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 font-semibold text-yellow-900 text-right">
                         {bet.creditSpent}
                       </span>
-                      <span className="text-gray-600">Feltett kredit</span>
                     </div>
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className={`inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold ${bet.winnings > 0 ? "text-green-900 font-bold" : "text-gray-400"}`}>
+                      <span className="text-gray-600 text-left">Nyeremény</span>
+                      <span className={`inline-block bg-green-50 border border-green-200 rounded px-2 py-1 font-semibold text-right ${bet.winnings > 0 ? "text-green-900 font-bold" : "text-gray-400"}`}>
                         {bet.winnings}
                       </span>
-                      <span className="text-gray-600">Nyeremény</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-bold ${
+                      <span className="text-gray-600 text-left">Státusz</span>
+                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-bold text-right ${
                         bet.event.status === "CLOSED" ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"
                       }`}>
                         {bet.event.status === "CLOSED" ? "Lezárt" : "Nyitott"}
                       </span>
-                      <span className="text-gray-600">Státusz</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-xs text-gray-500 mt-2 text-right">
                       {new Date(bet.event.kickoffTime).toLocaleString("hu-HU")}
                     </div>
                   </div>
