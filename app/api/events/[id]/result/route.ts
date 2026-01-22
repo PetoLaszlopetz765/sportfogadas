@@ -196,7 +196,11 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
         include: { dailyPool: true },
       });
       
-      const carriedFromPrevious = previousEvent?.dailyPool?.totalDaily ?? 0;
+      // Ha az előző esemény poolját nem osztották ki (totalDistributed == 0),
+      // akkor a teljes maradék (totalDaily + carriedFromPrevious) átjön.
+      const carriedFromPrevious = previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0
+        ? (previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious)
+        : 0;
       
       dailyPool = await prisma.dailyPool.create({
         data: {
