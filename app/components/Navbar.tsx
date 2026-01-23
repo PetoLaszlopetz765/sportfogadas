@@ -42,36 +42,52 @@ export default function Navbar() {
     updateNavbarState();
     window.addEventListener("storage", updateNavbarState);
 
-    // --- Auto-logout after 5 minutes inactivity ---
-    let logoutTimer: NodeJS.Timeout | null = null;
-    const resetTimer = () => {
-      if (logoutTimer) clearTimeout(logoutTimer);
-      // Only set timer if logged in
+    // --- Robust inactivity logout (mobile compatible) ---
+    const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+    const LAST_ACTIVITY_KEY = "lastActivity";
+    const activityEvents = ["mousemove", "keydown", "mousedown", "touchstart", "touchmove"];
+
+    const setLastActivity = () => {
       if (localStorage.getItem("token")) {
-        logoutTimer = setTimeout(() => {
-          // Clear all session data and redirect
-          localStorage.removeItem("token");
-          localStorage.removeItem("userId");
-          localStorage.removeItem("role");
-          localStorage.removeItem("username");
-          setIsLoggedIn(false);
-          setRole(null);
-          setUsername(null);
-          window.location.href = "/login";
-        }, 5 * 60 * 1000); // 5 minutes
+        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       }
     };
-    // Listen for user activity
-    const activityEvents = ["mousemove", "keydown", "mousedown", "touchstart"];
-    activityEvents.forEach(evt => window.addEventListener(evt, resetTimer));
-    // Start timer on mount
-    resetTimer();
 
-    // --- (REMOVED) Logout on browser/tab close ---
+    const checkInactivity = () => {
+      if (!localStorage.getItem("token")) return;
+      const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || "0", 10);
+      if (Date.now() - last > INACTIVITY_TIMEOUT) {
+        // Clear all session data and redirect
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("role");
+        localStorage.removeItem("username");
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+        setIsLoggedIn(false);
+        setRole(null);
+        setUsername(null);
+        window.location.href = "/login";
+      }
+    };
+
+    activityEvents.forEach(evt => window.addEventListener(evt, setLastActivity));
+    setLastActivity();
+
+    // Check inactivity on visibility change (when returning to tab/app)
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        checkInactivity();
+      }
+    });
+
+    // Optionally, check every minute in case of long open tabs
+    const interval = setInterval(checkInactivity, 60 * 1000);
+
     return () => {
       window.removeEventListener("storage", updateNavbarState);
-      activityEvents.forEach(evt => window.removeEventListener(evt, resetTimer));
-      if (logoutTimer) clearTimeout(logoutTimer);
+      activityEvents.forEach(evt => window.removeEventListener(evt, setLastActivity));
+      document.removeEventListener("visibilitychange", checkInactivity);
+      clearInterval(interval);
     };
   }, []);
 
