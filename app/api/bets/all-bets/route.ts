@@ -55,18 +55,34 @@ export async function GET(req: NextRequest) {
       orderBy: { kickoffTime: "asc" },
     });
 
+    // Rekurzív pool halmozódás minden eseményre (időrendben)
+    // Először építsünk egy eventId -> event map-et, hogy gyors legyen a lookup
+    const eventMap = new Map();
+    for (const e of allEvents) {
+      if (e.dailyPool) eventMap.set(e.id, e);
+    }
+
+    let lastCarried = 0;
+    for (const e of allEvents) {
+      if (!e.dailyPool) continue;
+      if (lastCarried > 0) {
+        e.dailyPool.carriedFromPrevious = lastCarried;
+      }
+      if (e.dailyPool.totalDistributed === 0) {
+        lastCarried = (e.dailyPool.totalDaily || 0) + (e.dailyPool.carriedFromPrevious || 0);
+      } else {
+        lastCarried = 0;
+      }
+    }
+
+    // Most minden bet.event.dailyPool-ban a helyes carriedFromPrevious lesz, ha az eventMap-ből frissítjük
     for (const bet of bets) {
       if (!bet.event.dailyPool) continue;
-
-      // Az előző esemény keresése (időrendben)
-      const previousEvent = allEvents
-        .filter(e => e.kickoffTime < bet.event.kickoffTime && e.dailyPool)
-        .sort((a, b) => b.kickoffTime.getTime() - a.kickoffTime.getTime())[0];
-
-      if (previousEvent?.dailyPool && previousEvent.dailyPool.totalDistributed === 0) {
-        // Az előző esemény pool-ja nem lett szétosztva, átgöngyöljük
-        const carriedAmount = previousEvent.dailyPool.totalDaily + previousEvent.dailyPool.carriedFromPrevious;
-        bet.event.dailyPool.carriedFromPrevious = carriedAmount;
+      const updatedEvent = eventMap.get(bet.event.id);
+      if (updatedEvent && updatedEvent.dailyPool) {
+        bet.event.dailyPool.carriedFromPrevious = updatedEvent.dailyPool.carriedFromPrevious;
+        bet.event.dailyPool.totalDaily = updatedEvent.dailyPool.totalDaily;
+        bet.event.dailyPool.totalDistributed = updatedEvent.dailyPool.totalDistributed;
       }
     }
 
