@@ -112,6 +112,9 @@ export async function POST(req: NextRequest) {
           creditSpent += event.creditCost;
           // Napi pool frissítése: 60% a feltett kreditből
           const dailyAmount = Math.floor(event.creditCost * 0.6);
+          // Bajnoki pool frissítése: 40% a feltett kreditből
+          const championshipAmount = event.creditCost - dailyAmount;
+
           // Frissítjük vagy létrehozzuk a dailyPool rekordot
           const existingPool = await tx.dailyPool.findUnique({ where: { eventId } });
           if (existingPool) {
@@ -130,6 +133,13 @@ export async function POST(req: NextRequest) {
               },
             });
           }
+
+          // Bajnoki (globális) pool frissítése vagy létrehozása
+          await tx.creditPool.upsert({
+            where: { id: 1 },
+            update: { totalChampionship: { increment: championshipAmount } },
+            create: { id: 1, totalDaily: 0, totalChampionship: championshipAmount },
+          });
         }
 
         // UPSERT tipp
