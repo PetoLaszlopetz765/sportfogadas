@@ -106,10 +106,30 @@ export async function POST(req: NextRequest) {
           where: { userId_eventId: { userId, eventId } },
         });
 
+
         if (!existingBet) {
           // Új tipp - kredit levonása
           creditSpent += event.creditCost;
-          // DailyPool és CreditPool frissítése az eredmény rögzítésekor történik (result route)
+          // Napi pool frissítése: 60% a feltett kreditből
+          const dailyAmount = Math.floor(event.creditCost * 0.6);
+          // Frissítjük vagy létrehozzuk a dailyPool rekordot
+          const existingPool = await tx.dailyPool.findUnique({ where: { eventId } });
+          if (existingPool) {
+            await tx.dailyPool.update({
+              where: { eventId },
+              data: { totalDaily: { increment: dailyAmount } },
+            });
+          } else {
+            await tx.dailyPool.create({
+              data: {
+                eventId,
+                date: new Date(event.kickoffTime),
+                totalDaily: dailyAmount,
+                carriedFromPrevious: 0,
+                totalDistributed: 0,
+              },
+            });
+          }
         }
 
         // UPSERT tipp
