@@ -15,7 +15,7 @@ export default function Home() {
             A baráti foci tippjáték – valódi pénz nélkül!
           </p>
           <p className="text-lg text-gray-600 mb-8">
-            Tippelj a világbajnokság meccseire, gyűjts pontokat, és nézd meg, milyen jók a tippeid!
+            Tippelj a meghatározott meccsekre, gyűjts pontokat, és nézd meg, milyen jók a tippeid!
           </p>
         </div>
 
