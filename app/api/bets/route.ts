@@ -156,26 +156,26 @@ export async function POST(req: NextRequest) {
             creditSpent: event.creditCost
           },
         });
-
-        // pontok frissítése a felhasználónál (összesítés)
-        const totalPoints = await tx.bet.aggregate({
-          where: { userId },
-          _sum: { pointsAwarded: true },
-        });
-
-        await tx.user.update({
-          where: { id: userId },
-          data: { points: totalPoints._sum.pointsAwarded || 0 },
-        });
       }
 
-      // Felhasználó kreditjeinek frissítése
+      // Felhasználó kreditjeinek és pontjainak frissítése csak az összes tipp feldolgozása után
+      const totalPoints = await tx.bet.aggregate({
+        where: { userId },
+        _sum: { pointsAwarded: true },
+      });
+
+      const updates: any = {
+        points: totalPoints._sum.pointsAwarded || 0,
+      };
+
       if (creditSpent > 0) {
-        await tx.user.update({
-          where: { id: userId },
-          data: { credits: { decrement: creditSpent } },
-        });
+        updates.credits = { decrement: creditSpent };
       }
+
+      await tx.user.update({
+        where: { id: userId },
+        data: updates,
+      });
 
       return { creditSpent };
     });
