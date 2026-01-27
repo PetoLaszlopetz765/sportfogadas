@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
       }
 
       let totalCreditNeeded = 0;
-      const betsToProcess = [];
+      const betsToProcess: Array<any> = [];
 
-      // Első körben ellenőrizzük, hogy van-e elég kredit
+      // Első körben ellenőrizzük, hogy van-e elég kredit és tárolunk minden információt
       for (const bet of body) {
         const event = await tx.event.findUnique({ where: { id: bet.eventId } });
         if (!event) continue;
@@ -75,12 +75,14 @@ export async function POST(req: NextRequest) {
           where: { userId_eventId: { userId, eventId: bet.eventId } },
         });
 
+        const isNewBet = !existingBet;
+
         // Ha új tipp, akkor kell a kredit
-        if (!existingBet) {
+        if (isNewBet) {
           totalCreditNeeded += event.creditCost;
         }
 
-        betsToProcess.push({ ...bet, event });
+        betsToProcess.push({ ...bet, event, isNewBet });
       }
 
       // Kredit ellenőrzés
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest) {
       let creditSpent = 0;
 
       for (const betData of betsToProcess) {
-        const { event, eventId, predictedHomeGoals, predictedAwayGoals } = betData;
+        const { event, eventId, predictedHomeGoals, predictedAwayGoals, isNewBet } = betData;
 
         const points = event.finalHomeGoals !== null && event.finalAwayGoals !== null
           ? calculatePoints(
@@ -101,13 +103,7 @@ export async function POST(req: NextRequest) {
             )
           : 0;
 
-        // Ellenőrizzük, hogy már van-e erre a felhasználónak tipja
-        const existingBet = await tx.bet.findUnique({
-          where: { userId_eventId: { userId, eventId } },
-        });
-
-
-        if (!existingBet) {
+        if (isNewBet) {
           // Új tipp - kredit levonása
           creditSpent += event.creditCost;
         }
