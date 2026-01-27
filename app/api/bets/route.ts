@@ -164,18 +164,16 @@ export async function POST(req: NextRequest) {
         _sum: { pointsAwarded: true },
       });
 
-      const updates: any = {
-        points: totalPoints._sum.pointsAwarded || 0,
-      };
-
+      // Csak akkor frissítünk, ha voltak új tippek (creditSpent > 0)
       if (creditSpent > 0) {
-        updates.credits = { decrement: creditSpent };
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            points: totalPoints._sum.pointsAwarded || 0,
+            credits: { decrement: creditSpent },
+          },
+        });
       }
-
-      await tx.user.update({
-        where: { id: userId },
-        data: updates,
-      });
 
       return { creditSpent };
     });
