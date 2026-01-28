@@ -650,17 +650,21 @@ export default function EventsAdminPage() {
                       Hazai gólok
                     </label>
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
+                      inputMode="numeric"
                       value={resultHome}
                       onChange={(e) => {
-                        console.log("📝 Home goals changed:", e.target.value);
-                        setResultHome(e.target.value);
+                        // Csak számjegyek engedélyezése
+                        const numValue = e.target.value.replace(/[^0-9]/g, '');
+                        setResultHome(numValue);
                       }}
-                      placeholder="0"
+                      onFocus={(e) => {
+                        // Kattintáskor kijelölés, nem dupla szám
+                        e.target.select();
+                      }}
+                      placeholder="Írj számot"
                       className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold text-center text-lg
                         focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500"
-                      required
                     />
                   </div>
 
@@ -669,17 +673,21 @@ export default function EventsAdminPage() {
                       Vendég gólok
                     </label>
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
+                      inputMode="numeric"
                       value={resultAway}
                       onChange={(e) => {
-                        console.log("📝 Away goals changed:", e.target.value);
-                        setResultAway(e.target.value);
+                        // Csak számjegyek engedélyezése
+                        const numValue = e.target.value.replace(/[^0-9]/g, '');
+                        setResultAway(numValue);
                       }}
-                      placeholder="0"
+                      onFocus={(e) => {
+                        // Kattintáskor kijelölés, nem dupla szám
+                        e.target.select();
+                      }}
+                      placeholder="Írj számot"
                       className="w-full h-12 px-4 rounded-xl border-2 border-gray-300 text-gray-900 font-semibold text-center text-lg
                         focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500"
-                      required
                     />
                   </div>
                 </div>
