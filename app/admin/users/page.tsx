@@ -97,9 +97,9 @@ export default function AdminUsersPage() {
 
   const handleCreditUpdate = async (userId: string) => {
     if (!token) return;
-    const amount = creditEdit[userId];
-    if (!amount || isNaN(Number(amount))) {
-      setError("Érvénytelen összeg!");
+    const newCredit = creditEdit[userId];
+    if (newCredit === "" || isNaN(Number(newCredit)) || Number(newCredit) < 0) {
+      setError("Érvénytelen kredit érték!");
       return;
     }
     setError(null);
@@ -110,7 +110,7 @@ export default function AdminUsersPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ amount: Number(amount) }),
+        body: JSON.stringify({ newCredit: Number(newCredit) }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -225,7 +225,7 @@ export default function AdminUsersPage() {
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Szerep</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Pontszám</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit</th>
-                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit módosítás</th>
+                  <th className="py-2 px-3 text-left text-gray-900 font-bold">Kredit (Új érték)</th>
                   <th className="py-2 px-3 text-left text-gray-900 font-bold">Jelszó módosítás</th>
                 </tr>
               </thead>
@@ -248,10 +248,11 @@ export default function AdminUsersPage() {
                               type="number"
                               value={creditEdit[user.id] || ""}
                               onChange={e => handleCreditChange(user.id, e.target.value)}
-                              className="border border-blue-300 rounded-xl px-2 py-1 w-20 text-gray-900 bg-white shadow-sm"
-                              placeholder="Új kredit"
+                              min="0"
+                              className="border border-blue-300 rounded-xl px-2 py-1 w-24 text-gray-900 bg-white shadow-sm"
+                              placeholder="Pl: 500"
                             />
-                            <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-3 py-1 rounded-xl shadow">Módosít</button>
+                            <button type="submit" className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-3 py-1 rounded-xl shadow">Beállít</button>
                           </form>
                           <button
                             className="bg-red-600 hover:bg-red-800 text-white font-bold px-3 py-1 rounded-xl shadow ml-2"
@@ -323,14 +324,15 @@ export default function AdminUsersPage() {
                         type="number"
                         value={creditEdit[user.id] || ""}
                         onChange={e => handleCreditChange(user.id, e.target.value)}
+                        min="0"
                         className="flex-1 border border-blue-300 rounded-xl px-2 py-1 text-gray-900 bg-white shadow-sm"
-                        placeholder="Új kredit"
+                        placeholder="Pl: 500"
                       />
                       <button
                         onClick={() => handleCreditUpdate(user.id)}
                         className="bg-blue-700 hover:bg-blue-900 text-white font-bold px-3 py-1 rounded-xl shadow whitespace-nowrap"
                       >
-                        Kredit
+                        Beállít
                       </button>
                     </div>
                     <div className="flex gap-2">

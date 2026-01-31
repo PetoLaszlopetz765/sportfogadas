@@ -25,16 +25,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ message: "Érvénytelen vagy hiányzó user ID!" }, { status: 400 });
     }
     const userId = Number(id);
-    const { amount } = await req.json();
-    if (typeof amount !== "number" || isNaN(amount)) {
+    const { newCredit } = await req.json();
+    if (typeof newCredit !== "number" || isNaN(newCredit) || newCredit < 0) {
       return NextResponse.json({ message: "Érvénytelen összeg!" }, { status: 400 });
     }
-    // Ne legyen -kredit
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { credits: true } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
     if (!user) return NextResponse.json({ message: "Felhasználó nem található" }, { status: 404 });
-    const newCredits = Math.max(0, (user.credits || 0) + amount);
-    await prisma.user.update({ where: { id: userId }, data: { credits: newCredits } });
-    return NextResponse.json({ message: `Kredit frissítve: ${newCredits} kredit`, credits: newCredits });
+    await prisma.user.update({ where: { id: userId }, data: { credits: newCredit } });
+    return NextResponse.json({ message: `Kredit módosítva: ${newCredit} kredit`, credits: newCredit });
   } catch (err) {
     return NextResponse.json({ message: `Hiba: ${err instanceof Error ? err.message : String(err)}` }, { status: 500 });
   }
